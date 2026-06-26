@@ -4,10 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Training Log</title>
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Training Log">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -1208,52 +1210,9 @@ function initApp() {
 }
 </script>
 <script>
-  // Inline manifest como data URI
-  const manifest = {
-    name: 'Training Log',
-    short_name: 'Training',
-    description: 'Registra tus entrenamientos y seguí tu progreso',
-    start_url: '/',
-    display: 'standalone',
-    background_color: '#0a0a0a',
-    theme_color: '#0a0a0a',
-    orientation: 'portrait',
-    icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230a0a0a'/%3E%3Ctext x='256' y='340' font-family='Arial Black,sans-serif' font-weight='900' font-size='280' fill='%23c8f135' text-anchor='middle'%3ET%3C/text%3E%3Ccircle cx='370' cy='175' r='28' fill='%23c8f135'/%3E%3C/svg%3E",
-      sizes: 'any',
-      type: 'image/svg+xml',
-      purpose: 'any maskable'
-    }]
-  };
-  const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-  const manifestURL = URL.createObjectURL(manifestBlob);
-  const manifestLink = document.createElement('link');
-  manifestLink.rel = 'manifest';
-  manifestLink.href = manifestURL;
-  document.head.appendChild(manifestLink);
-
-  // Inline service worker como blob
   if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'training-log-v1';
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => { self.clients.claim(); });
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  if (e.request.url.includes('firestore') || e.request.url.includes('firebase') || e.request.url.includes('google')) return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).then(res => {
-        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-        return res;
-      });
-    })
-  );
-});`;
-    const swBlob = new Blob([swCode], {type: 'application/javascript'});
-    const swURL = URL.createObjectURL(swBlob);
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register(swURL, {type: 'classic'}).catch(() => {});
+      navigator.serviceWorker.register('/traininglog/sw.js').catch(() => {});
     });
   }
 </script>
