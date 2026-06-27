@@ -1437,7 +1437,7 @@ function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v7';
+  const APP_VERSION = 'v8';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
@@ -1461,6 +1461,11 @@ function initApp() {
         swReg = reg;
         // Si ya hay un worker esperando al cargar (actualización pendiente)
         if (reg.waiting && navigator.serviceWorker.controller) mostrarUpdateBanner();
+        // Buscar nuevas versiones activamente: cada minuto y al volver a la app
+        setInterval(() => reg.update().catch(() => {}), 60000);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) reg.update().catch(() => {});
+        });
         // Detectar cuando llega una versión nueva
         reg.addEventListener('updatefound', () => {
           const nw = reg.installing;
