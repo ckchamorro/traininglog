@@ -571,7 +571,7 @@
 
     <div class="header">
       <div class="header-left">
-        <div class="header-greeting">Buenas,</div>
+        <div class="header-greeting" id="header-greeting">Buenas,</div>
         <div class="header-title"><span id="user-name-short">atleta</span> 👋</div>
       </div>
       <div class="header-right">
@@ -1412,9 +1412,17 @@ window.compartirInstagram = async function() {
   }
 };
 
+function saludoPorHora(h) {
+  if (h >= 5 && h < 12) return 'Buen día,';
+  if (h >= 12 && h < 19) return 'Buenas tardes,';
+  return 'Buenas noches,';
+}
+
 function initApp() {
   cargarPremium();
   const hoy = new Date();
+  const saludoEl = document.getElementById('header-greeting');
+  if (saludoEl) saludoEl.textContent = saludoPorHora(hoy.getHours());
   const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   document.getElementById('fechaDia').textContent = `${dias[hoy.getDay()]} ${hoy.getDate()}`;
@@ -1429,7 +1437,7 @@ function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v6';
+  const APP_VERSION = 'v7';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
