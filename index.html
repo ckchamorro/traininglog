@@ -467,9 +467,10 @@
     box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     font-family: var(--font); font-size: 0.85rem; font-weight: 600; color: var(--text);
     width: calc(100% - 40px); max-width: 360px;
-    opacity: 0; transition: transform 0.35s ease, opacity 0.35s ease;
+    opacity: 0; pointer-events: none;
+    transition: transform 0.35s ease, opacity 0.35s ease;
   }
-  .update-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .update-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   .update-banner button {
     background: var(--lime); color: #0a0a0a; border: none; border-radius: 10px;
     padding: 9px 16px; font-family: var(--font); font-weight: 800; font-size: 0.82rem;
@@ -1428,7 +1429,7 @@ function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v5';
+  const APP_VERSION = 'v6';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
