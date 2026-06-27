@@ -1,4 +1,4 @@
-const CACHE = 'training-log-v4';
+const CACHE = 'training-log-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -7,9 +7,9 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  // No llamamos skipWaiting() aquí: el worker nuevo queda "esperando"
+  // hasta que el usuario toque "Actualizar" (mensaje SKIP_WAITING).
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener('activate', e => {
@@ -18,6 +18,10 @@ self.addEventListener('activate', e => {
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', e => {

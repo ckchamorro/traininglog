@@ -457,6 +457,29 @@
   }
   .hist-upsell span { display: block; margin-top: 4px; font-weight: 500; font-size: 0.78rem; color: var(--text-dim); }
 
+  /* ══ AVISO DE NUEVA VERSIÓN ══ */
+  .update-banner {
+    position: fixed; left: 50%; bottom: 86px;
+    transform: translateX(-50%) translateY(160%);
+    z-index: 700; display: flex; align-items: center; gap: 14px;
+    background: var(--bg3); border: 1px solid var(--lime);
+    border-radius: 14px; padding: 12px 14px 12px 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    font-family: var(--font); font-size: 0.85rem; font-weight: 600; color: var(--text);
+    width: calc(100% - 40px); max-width: 360px;
+    opacity: 0; transition: transform 0.35s ease, opacity 0.35s ease;
+  }
+  .update-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .update-banner button {
+    background: var(--lime); color: #0a0a0a; border: none; border-radius: 10px;
+    padding: 9px 16px; font-family: var(--font); font-weight: 800; font-size: 0.82rem;
+    cursor: pointer; white-space: nowrap; margin-left: auto;
+  }
+  .app-version {
+    text-align: center; font-family: var(--font); font-size: 0.7rem;
+    color: var(--text-faint); padding: 16px 0 4px;
+  }
+
   /* ══ MODAL ══ */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
@@ -604,6 +627,7 @@
       <div class="section-label">Mis ejercicios</div>
       <div id="ej-manage-list"></div>
       <button class="btn-add-ej" id="btn-add-ej">＋ Agregar ejercicio</button>
+      <div class="app-version" id="app-version"></div>
     </div>
 
   </div>
@@ -629,6 +653,11 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="update-banner" id="update-banner">
+  <span>🔄 Nueva versión disponible</span>
+  <button onclick="aplicarUpdate()">Actualizar</button>
+</div>
 
 
 <div class="modal-overlay" id="modal-ej">
@@ -1399,9 +1428,50 @@ function initApp() {
 }
 </script>
 <script>
+  const APP_VERSION = 'v5';
+  (function () {
+    const verEl = document.getElementById('app-version');
+    if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
+  })();
+
+  let swReg = null;
+  function mostrarUpdateBanner() {
+    const b = document.getElementById('update-banner');
+    if (b) b.classList.add('show');
+  }
+  window.aplicarUpdate = function () {
+    const span = document.querySelector('#update-banner span');
+    if (span) span.textContent = '⏳ Actualizando…';
+    if (swReg && swReg.waiting) swReg.waiting.postMessage('SKIP_WAITING');
+    else window.location.reload();
+  };
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/traininglog/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/traininglog/sw.js').then(reg => {
+        swReg = reg;
+        // Si ya hay un worker esperando al cargar (actualización pendiente)
+        if (reg.waiting && navigator.serviceWorker.controller) mostrarUpdateBanner();
+        // Detectar cuando llega una versión nueva
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              swReg = reg;
+              mostrarUpdateBanner();
+            }
+          });
+        });
+      }).catch(() => {});
+
+      // Cuando el worker nuevo toma control, recargar una sola vez
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
     });
   }
 </script>
