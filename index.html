@@ -298,6 +298,7 @@
   .chart-container {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: 18px; padding: 18px; margin-bottom: 12px;
+    position: relative;
   }
   .chart-title {
     font-size: 0.72rem; font-weight: 700; color: var(--text-faint);
@@ -387,6 +388,72 @@
     font-family: var(--font); font-size: 0.85rem; font-weight: 600;
     border-radius: 14px; padding: 12px; cursor: pointer;
   }
+
+  /* ══ PREMIUM / PAYWALL ══ */
+  .premium-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, var(--lime), #9bd40a);
+    color: #0a0a0a; font-family: var(--font); font-weight: 800; font-size: 0.72rem;
+    border: none; border-radius: 999px; padding: 6px 11px; cursor: pointer;
+    box-shadow: 0 2px 12px var(--lime-glow); margin-right: 8px;
+  }
+  #paywall-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 600;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  #paywall-modal.open { display: flex; }
+  .paywall-box {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 24px; padding: 28px 24px;
+    width: 100%; max-width: 360px; max-height: 92vh; overflow-y: auto;
+    text-align: center; box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  }
+  .paywall-crown { font-size: 2.6rem; line-height: 1; }
+  .paywall-title { font-family: var(--font); font-weight: 800; font-size: 1.5rem; color: var(--text); margin-top: 8px; }
+  .paywall-title span { color: var(--lime); }
+  .paywall-sub { font-family: var(--font); font-size: 0.9rem; color: var(--text-dim); margin: 8px 0 20px; }
+  .paywall-feats { list-style: none; padding: 0; margin: 0 0 22px; text-align: left; }
+  .paywall-feats li {
+    font-family: var(--font); font-size: 0.9rem; color: var(--text); font-weight: 500;
+    padding: 9px 0 9px 30px; position: relative; border-bottom: 1px solid var(--border);
+  }
+  .paywall-feats li::before { content: '✓'; position: absolute; left: 4px; color: var(--lime); font-weight: 800; }
+  .paywall-plans { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .plan-btn {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-family: var(--font); border-radius: 16px; padding: 14px; cursor: pointer;
+  }
+  .plan-anual { background: var(--lime); color: #0a0a0a; border: none; }
+  .plan-mensual { background: transparent; color: var(--text); border: 1px solid var(--border2); }
+  .plan-name { font-weight: 700; font-size: 0.85rem; }
+  .plan-price { font-weight: 800; font-size: 1.15rem; }
+  .plan-price small { font-weight: 600; font-size: 0.75rem; opacity: 0.7; }
+  .plan-tag {
+    position: absolute; top: -10px; right: 14px;
+    background: #0a0a0a; color: var(--lime); font-size: 0.65rem; font-weight: 800;
+    padding: 3px 9px; border-radius: 999px; border: 1px solid var(--lime);
+  }
+  .paywall-trial { font-family: var(--font); font-size: 0.78rem; color: var(--text-faint); margin-bottom: 16px; }
+  .paywall-close {
+    background: transparent; border: none; color: var(--text-dim);
+    font-family: var(--font); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  }
+  .chart-container.locked canvas { filter: blur(7px); opacity: 0.4; }
+  .chart-lock {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+    font-size: 2rem; color: var(--lime); text-align: center;
+  }
+  .chart-lock span { font-family: var(--font); font-size: 0.82rem; color: var(--text); font-weight: 500; }
+  .chart-lock b { color: var(--lime); font-weight: 800; }
+  .hist-upsell {
+    text-align: center; cursor: pointer;
+    border: 1.5px dashed var(--lime); border-radius: 16px; padding: 18px;
+    font-family: var(--font); font-weight: 700; font-size: 0.9rem; color: var(--lime);
+    background: var(--lime-dim); margin-top: 4px;
+  }
+  .hist-upsell span { display: block; margin-top: 4px; font-weight: 500; font-size: 0.78rem; color: var(--text-dim); }
 
   /* ══ MODAL ══ */
   .modal-overlay {
@@ -482,6 +549,7 @@
         <div class="header-title"><span id="user-name-short">atleta</span> 👋</div>
       </div>
       <div class="header-right">
+        <button class="premium-badge" id="premium-badge" onclick="abrirPaywall('header')" style="display:none">⭐ Premium</button>
         <img class="user-avatar" id="user-photo" src="" alt="" style="display:none">
         <div class="user-initial" id="user-initial" style="display:none"></div>
         <button class="btn-logout" onclick="logout()">Salir</button>
@@ -594,6 +662,35 @@
   </div>
 </div>
 
+<!-- Paywall Premium Modal -->
+<div id="paywall-modal">
+  <div class="paywall-box">
+    <div class="paywall-crown">⭐</div>
+    <div class="paywall-title">Training Log <span>Premium</span></div>
+    <div class="paywall-sub" id="paywall-sub">Lleva tu progreso al siguiente nivel.</div>
+    <ul class="paywall-feats">
+      <li>Ejercicios ilimitados</li>
+      <li>Historial completo, sin límites</li>
+      <li>Gráfico de peso y análisis avanzado</li>
+      <li>Imagen para compartir sin marca de agua</li>
+      <li>Exportar tus datos (próximamente)</li>
+    </ul>
+    <div class="paywall-plans">
+      <button class="plan-btn plan-anual" onclick="iniciarCheckout('anual')">
+        <span class="plan-tag">Ahorra 45%</span>
+        <span class="plan-name">Anual</span>
+        <span class="plan-price">$19.99<small>/año</small></span>
+      </button>
+      <button class="plan-btn plan-mensual" onclick="iniciarCheckout('mensual')">
+        <span class="plan-name">Mensual</span>
+        <span class="plan-price">$2.99<small>/mes</small></span>
+      </button>
+    </div>
+    <div class="paywall-trial">7 días gratis · cancela cuando quieras</div>
+    <button class="paywall-close" onclick="cerrarPaywall()">Ahora no</button>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -626,6 +723,48 @@ const EJERCICIOS_DEFAULT = [
 const HISTORIAL_INICIAL = [];
 
 let currentUser = null, datosCache = null, ejerciciosCache = null;
+
+// ─────────────────────────────────────────────────────────────
+// PREMIUM (Fase 1: flag manual de prueba; en Fase 2-5 lo controla Stripe)
+// Para probar desde la consola del navegador:  setPremiumTest(true)  /  setPremiumTest(false)
+// ─────────────────────────────────────────────────────────────
+const LIMITE_EJ_GRATIS = 8;
+const LIMITE_HIST_GRATIS = 15;
+const PRECIOS = { mensual: '$2.99', anual: '$19.99' };
+const PAYWALL_MSG = {
+  ejercicios: 'Llegaste al límite de 8 ejercicios del plan gratis.',
+  historial: 'Con Premium ves tu historial completo, sin límites.',
+  peso: 'El gráfico de peso es una función Premium.',
+  poster: 'Comparte tu sesión sin marca de agua con Premium.',
+  header: 'Lleva tu progreso al siguiente nivel.',
+};
+let esPremiumCache = false;
+function cargarPremium() { esPremiumCache = localStorage.getItem('premiumTest') === '1'; }
+function esPremium() { return esPremiumCache; }
+function actualizarUIPremium() {
+  const badge = document.getElementById('premium-badge');
+  if (badge) badge.style.display = esPremium() ? 'none' : 'inline-flex';
+  renderHistorial();
+  if (document.getElementById('panel-progreso')?.classList.contains('active')) renderProgreso();
+}
+window.abrirPaywall = function(ctx) {
+  document.getElementById('paywall-sub').textContent = PAYWALL_MSG[ctx] || PAYWALL_MSG.header;
+  document.getElementById('paywall-modal').classList.add('open');
+};
+window.cerrarPaywall = function() { document.getElementById('paywall-modal').classList.remove('open'); };
+window.iniciarCheckout = function(plan) {
+  // Fase 2-5: aquí se conectará Stripe Checkout con los price_id reales.
+  cerrarPaywall();
+  mostrarToast('💳 Pagos disponibles pronto · ' + PRECIOS[plan]);
+};
+// Helper de prueba para alternar premium sin pagar (solo Fase 1)
+window.setPremiumTest = function(v) {
+  localStorage.setItem('premiumTest', v ? '1' : '0');
+  esPremiumCache = !!v;
+  actualizarUIPremium();
+  renderRegistro();
+  mostrarToast(v ? '⭐ Modo Premium ACTIVADO (prueba)' : 'Modo Gratis (prueba)');
+};
 
 async function leerFirestore() {
   const ref = doc(db, 'usuarios', currentUser.uid);
@@ -852,9 +991,18 @@ window.guardarSesion = async function() {
 
 function renderHistorial() {
   const datos = cargarDatos();
-  const fechas = [...new Set(datos.map(r => r.fecha))].sort((a,b) => b.localeCompare(a));
+  let fechas = [...new Set(datos.map(r => r.fecha))].sort((a,b) => b.localeCompare(a));
   const container = document.getElementById('historial-container');
+  if (!container) return;
   if (!fechas.length) { container.innerHTML = '<div class="empty-state">Sin sesiones registradas aún.</div>'; return; }
+  let upsell = '';
+  if (!esPremium() && fechas.length > LIMITE_HIST_GRATIS) {
+    const ocultas = fechas.length - LIMITE_HIST_GRATIS;
+    fechas = fechas.slice(0, LIMITE_HIST_GRATIS);
+    upsell = `<div class="hist-upsell" onclick="abrirPaywall('historial')">
+      🔒 ${ocultas} sesión${ocultas > 1 ? 'es' : ''} más en tu historial
+      <span>Desbloquea el historial completo con Premium</span></div>`;
+  }
   container.innerHTML = fechas.map(fecha => {
     const registros = datos.filter(r => r.fecha === fecha);
     const notasUnicas = [...new Set(registros.map(r => r.notas).filter(Boolean))].join(' · ');
@@ -877,7 +1025,7 @@ function renderHistorial() {
       </table>
       ${notasUnicas ? `<div class="hist-notas">✍️ ${notasUnicas}</div>` : ''}
     </div>`;
-  }).join('');
+  }).join('') + upsell;
 }
 
 let chartReps = null, chartPeso = null, ejSeleccionado = null;
@@ -896,6 +1044,25 @@ function renderProgreso() {
       ${ej.nombre}${ej.lado ? ' ' + ej.lado.replace('Derecha','D').replace('Izquierda','I').replace(/[()]/g,'') : ''}
     </button>`).join('');
   actualizarGraficos();
+  aplicarBloqueoPeso();
+}
+function aplicarBloqueoPeso() {
+  const cont = document.getElementById('chartPeso')?.closest('.chart-container');
+  if (!cont) return;
+  let lock = cont.querySelector('.chart-lock');
+  if (!esPremium()) {
+    cont.classList.add('locked');
+    if (!lock) {
+      lock = document.createElement('div');
+      lock.className = 'chart-lock';
+      lock.innerHTML = '🔒<span>Gráfico de peso<br><b>Función Premium</b></span>';
+      lock.onclick = () => abrirPaywall('peso');
+      cont.appendChild(lock);
+    }
+  } else {
+    cont.classList.remove('locked');
+    if (lock) lock.remove();
+  }
 }
 window.seleccionarEj = function(id, btn) {
   ejSeleccionado = id;
@@ -971,6 +1138,7 @@ function renderEjManage() {
 }
 
 window.abrirModalAgregar = function() {
+  if (!esPremium() && cargarEjercicios().length >= LIMITE_EJ_GRATIS) { abrirPaywall('ejercicios'); return; }
   modalEditIdx = null;
   document.getElementById('modal-ej-title').textContent = 'Nuevo ejercicio';
   document.getElementById('modal-nombre').value = '';
@@ -1165,6 +1333,20 @@ function mostrarShare(sesionHoy) {
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.fillText('traininglog.app', W / 2, H - 72);
 
+  // Marca de agua diagonal en plan gratis
+  if (!esPremium()) {
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(-Math.PI / 9);
+    ctx.font = '800 96px DM Sans, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.textAlign = 'center';
+    ctx.fillText('TRAINING LOG · FREE', 0, -160);
+    ctx.fillText('TRAINING LOG · FREE', 0, 80);
+    ctx.fillText('TRAINING LOG · FREE', 0, 320);
+    ctx.restore();
+  }
+
   document.getElementById('share-modal').classList.add('open');
 }
 
@@ -1199,11 +1381,14 @@ window.compartirInstagram = async function() {
 };
 
 function initApp() {
+  cargarPremium();
   const hoy = new Date();
   const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   document.getElementById('fechaDia').textContent = `${dias[hoy.getDay()]} ${hoy.getDate()}`;
   document.getElementById('fechaHoy').textContent = `${meses[hoy.getMonth()]} ${hoy.getFullYear()}`;
+  const badge = document.getElementById('premium-badge');
+  if (badge) badge.style.display = esPremium() ? 'none' : 'inline-flex';
   renderRegistro();
   document.getElementById('btn-add-ej').addEventListener('click', abrirModalAgregar);
   document.getElementById('modal-ej').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
