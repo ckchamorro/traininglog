@@ -81,17 +81,15 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 0 18px;
   }
-  .header-left {}
-  .header-greeting {
-    font-size: 0.75rem; font-weight: 600; color: var(--text-dim);
-    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px;
-  }
+  .header-left { min-width: 0; }
   .header-title {
-    font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px;
+    font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px;
     color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .header-title span { color: var(--lime); }
-  .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-title .greet { color: var(--text-dim); font-weight: 600; }
+  .header-title #user-name-short { color: var(--lime); }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .user-avatar {
     width: 38px; height: 38px; border-radius: 50%;
     border: 2px solid var(--border2); object-fit: cover;
@@ -393,11 +391,12 @@
 
   /* ══ PREMIUM / PAYWALL ══ */
   .premium-badge {
-    display: inline-flex; align-items: center; gap: 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; line-height: 1;
     background: linear-gradient(135deg, var(--lime), #9bd40a);
-    color: #0a0a0a; font-family: var(--font); font-weight: 800; font-size: 0.72rem;
-    border: none; border-radius: 999px; padding: 6px 11px; cursor: pointer;
-    box-shadow: 0 2px 12px var(--lime-glow); margin-right: 8px;
+    font-size: 0.95rem;
+    border: none; border-radius: 50%; padding: 0; cursor: pointer;
+    box-shadow: 0 2px 12px var(--lime-glow); margin-right: 4px;
   }
   #paywall-modal {
     display: none; position: fixed; inset: 0;
@@ -571,11 +570,10 @@
 
     <div class="header">
       <div class="header-left">
-        <div class="header-greeting" id="header-greeting">Buenas,</div>
-        <div class="header-title"><span id="user-name-short">atleta</span> 👋</div>
+        <div class="header-title"><span class="greet" id="header-greeting">Buenas,</span> <span id="user-name-short">atleta</span> 👋</div>
       </div>
       <div class="header-right">
-        <button class="premium-badge" id="premium-badge" onclick="abrirPaywall('header')" style="display:none">⭐ Premium</button>
+        <button class="premium-badge" id="premium-badge" onclick="abrirPaywall('header')" style="display:none" aria-label="Hazte Premium">⭐</button>
         <img class="user-avatar" id="user-photo" src="" alt="" style="display:none">
         <div class="user-initial" id="user-initial" style="display:none"></div>
         <button class="btn-logout" onclick="logout()">Salir</button>
@@ -1437,7 +1435,7 @@ function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v9';
+  const APP_VERSION = 'v10';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
