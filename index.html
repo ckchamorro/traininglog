@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Training Log">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -771,7 +772,16 @@ const PAYWALL_MSG = {
   header: 'Lleva tu progreso al siguiente nivel.',
 };
 let esPremiumCache = false;
-function cargarPremium() { esPremiumCache = localStorage.getItem('premiumTest') === '1'; }
+async function cargarPremium() {
+  // Primero chequea localStorage (modo test)
+  if (localStorage.getItem('premiumTest') === '1') { esPremiumCache = true; return; }
+  // Luego chequea Firestore
+  try {
+    const ref = doc(db, 'usuarios', currentUser.uid);
+    const snap = await getDoc(ref);
+    esPremiumCache = snap.exists() && snap.data().premium === true;
+  } catch(e) { esPremiumCache = false; }
+}
 function esPremium() { return esPremiumCache; }
 function actualizarUIPremium() {
   const badge = document.getElementById('premium-badge');
@@ -784,10 +794,16 @@ window.abrirPaywall = function(ctx) {
   document.getElementById('paywall-modal').classList.add('open');
 };
 window.cerrarPaywall = function() { document.getElementById('paywall-modal').classList.remove('open'); };
+const LS_VARIANTS = {
+  mensual: '1845839',
+  anual:   '1849296',
+};
 window.iniciarCheckout = function(plan) {
-  // Fase 2-5: aquí se conectará Stripe Checkout con los price_id reales.
   cerrarPaywall();
-  mostrarToast('💳 Pagos disponibles pronto · ' + PRECIOS[plan]);
+  const variantId = LS_VARIANTS[plan];
+  const uid = currentUser?.uid || '';
+  const url = `https://ckc.lemonsqueezy.com/buy/${variantId}?embed=1&media=0&checkout[custom][user_id]=${uid}`;
+  window.LemonSqueezy.Url.Open(url);
 };
 // Helper de prueba para alternar premium sin pagar (solo Fase 1)
 window.setPremiumTest = function(v) {
@@ -1418,8 +1434,8 @@ function saludoPorHora(h) {
   return 'Buenas noches,';
 }
 
-function initApp() {
-  cargarPremium();
+async function initApp() {
+  await cargarPremium();
   const hoy = new Date();
   const saludoEl = document.getElementById('header-greeting');
   if (saludoEl) saludoEl.textContent = saludoPorHora(hoy.getHours());
