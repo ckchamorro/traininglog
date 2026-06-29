@@ -1,4 +1,4 @@
-const CACHE = 'training-log-v12';
+const CACHE = 'training-log-v13';
 const ASSETS = [
   '/',
   '/index.html',
