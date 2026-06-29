@@ -7,9 +7,11 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  // No llamamos skipWaiting() aquí: el worker nuevo queda "esperando"
-  // hasta que el usuario toque "Actualizar" (mensaje SKIP_WAITING).
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(ASSETS.map(a => c.add(a).catch(() => {})))
+    ).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
