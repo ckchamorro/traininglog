@@ -801,7 +801,7 @@ window.iniciarCheckout = function(plan) {
   cerrarPaywall();
   const variantId = LS_VARIANTS[plan];
   const uid = currentUser?.uid || '';
-  const url = `https://ckc.lemonsqueezy.com/checkout?cart=${variantId}&checkout[custom][user_id]=${uid}`;
+  const url = `https://ckc.lemonsqueezy.com/checkout?cart=${variantId}&checkout%5Bcustom%5D%5Buser_id%5D=${uid}`;
   window.location.href = url;
 };
 // Helper de prueba para alternar premium sin pagar (solo Fase 1)
