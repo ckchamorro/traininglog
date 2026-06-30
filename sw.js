@@ -9,7 +9,6 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
       Promise.all(
@@ -17,6 +16,10 @@ self.addEventListener('install', (event) => {
       )
     )
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
