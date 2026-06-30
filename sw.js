@@ -1,4 +1,4 @@
-const CACHE = 'traininglog-v16';
+const CACHE = 'traininglog-v17';
 const ASSETS = [
   './',
   './index.html',
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
 
   if (isHTML) {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-store' })
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy));
