@@ -1452,7 +1452,7 @@ async function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v13';
+  const APP_VERSION = 'v14';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
@@ -1472,7 +1472,7 @@ async function initApp() {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/traininglog/sw.js').then(reg => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
         swReg = reg;
         // Si ya hay un worker esperando al cargar (actualización pendiente)
         if (reg.waiting && navigator.serviceWorker.controller) mostrarUpdateBanner();
