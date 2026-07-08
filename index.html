@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Training Log</title>
+<title>Training Log — Registra tu entrenamiento y mira tu progreso</title>
+<meta name="description" content="Registra tus entrenamientos en segundos y mira tu progreso sesión a sesión. Simple, en español y sin suscripciones.">
+<meta property="og:title" content="Training Log — Registra tu entrenamiento y mira tu progreso">
+<meta property="og:description" content="La app de registro de entrenamientos simple y en español. Gratis para empezar. Premium para siempre con un pago único, sin suscripciones.">
+<meta property="og:image" content="https://app.ormakom.com/icon-512.png">
+<meta property="og:url" content="https://app.ormakom.com/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,13 +47,43 @@
     overflow-x: hidden;
   }
 
-  /* ══ LOGIN ══ */
+  /* ══ LOGIN / LANDING ══ */
   #login-screen {
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: 100vh; padding: 32px 24px;
+    align-items: center; justify-content: flex-start;
+    min-height: 100vh; padding: 56px 24px 40px;
     background: var(--bg);
   }
+  .land-tagline {
+    font-size: 1rem; color: var(--text-dim);
+    margin: 6px 0 28px; text-align: center; line-height: 1.6;
+  }
+  .land-note { font-size: 0.75rem; color: var(--text-faint); margin-top: 12px; }
+  .land-video {
+    margin: 36px 0 4px; width: min(260px, 70vw);
+    border-radius: 28px; overflow: hidden;
+    border: 1px solid var(--border2);
+    box-shadow: 0 12px 48px rgba(0,0,0,0.55), 0 0 40px var(--lime-dim);
+  }
+  .land-video video { display: block; width: 100%; aspect-ratio: 430 / 932; object-fit: cover; background: #111; }
+  .land-feats { list-style: none; padding: 0; margin: 28px 0 0; width: 100%; max-width: 360px; }
+  .land-feats li {
+    display: flex; gap: 12px; align-items: center;
+    font-size: 0.92rem; color: var(--text); font-weight: 500;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+  }
+  .land-feats li span { font-size: 1.15rem; }
+  .land-premium {
+    margin: 28px 0 24px; text-align: center;
+    background: var(--lime-dim); border: 1px solid rgba(200,241,53,0.3);
+    border-radius: 18px; padding: 18px 20px; max-width: 360px;
+  }
+  .land-premium-title { color: var(--lime); font-weight: 800; font-size: 0.95rem; margin-bottom: 6px; }
+  .land-premium-sub { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+  .land-premium-sub b { color: var(--text); }
+  .btn-google.btn-google-big { background: var(--lime); color: #0a0a0a; border: none; font-weight: 800; padding: 13px 24px; }
+  .btn-google.btn-google-big:hover { background: #d4f95a; border: none; }
+  .land-footer { margin-top: 32px; font-size: 0.72rem; color: var(--text-faint); }
   .login-icon {
     font-size: 3rem; margin-bottom: 20px;
     filter: drop-shadow(0 0 24px var(--lime-glow));
@@ -559,16 +596,41 @@
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN / LANDING -->
 <div id="login-screen">
   <div class="login-icon">⚡</div>
   <div class="login-title">Training <span>Log</span></div>
-  <div class="login-sub">Tu progreso, siempre contigo.<br>Accede desde cualquier dispositivo.</div>
+  <div class="land-tagline">Registra tus entrenamientos en segundos.<br>Mira tu progreso sesión a sesión.</div>
   <button class="btn-google" onclick="loginGoogle()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
-    Continuar con Google
+    Empieza gratis con Google
   </button>
+  <div class="land-note">Gratis · Sin tarjeta · Directo en tu teléfono</div>
   <div class="login-msg" id="login-msg"></div>
+
+  <div class="land-video">
+    <video src="demo.mp4" muted autoplay loop playsinline preload="metadata"></video>
+  </div>
+
+  <ul class="land-feats">
+    <li><span>⚡</span> Registra series, reps y kilos con dos toques</li>
+    <li><span>📈</span> Gráficos de tu progreso por ejercicio</li>
+    <li><span>📋</span> Historial de todas tus sesiones</li>
+    <li><span>📸</span> Comparte tu sesión en Instagram</li>
+    <li><span>☁️</span> Sincronizada en la nube, en todos tus dispositivos</li>
+  </ul>
+
+  <div class="land-premium">
+    <div class="land-premium-title">⭐ Premium para siempre</div>
+    <div class="land-premium-sub">Empieza gratis. Desbloquea todo con un <b>pago único de $14.99</b>.<br>Sin suscripciones. Sin mensualidades.</div>
+  </div>
+
+  <button class="btn-google btn-google-big" onclick="loginGoogle()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+    Empieza a entrenar — es gratis
+  </button>
+
+  <div class="land-footer">Training Log · app.ormakom.com</div>
 </div>
 
 <!-- APP -->
