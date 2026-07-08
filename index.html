@@ -793,18 +793,19 @@ window.abrirPaywall = function(ctx) {
   document.getElementById('paywall-modal').classList.add('open');
 };
 window.cerrarPaywall = function() { document.getElementById('paywall-modal').classList.remove('open'); };
+// Link de compra del producto (dashboard → Products → Share); enabled elige la variante
+const LS_PRODUCT_UUID = '7096be32-3274-4460-9541-6c8d9953e72a';
 const LS_VARIANTS = {
   mensual: '1845839',
   anual:   '1849296',
 };
 window.iniciarCheckout = function(plan) {
   cerrarPaywall();
-  const variantId = LS_VARIANTS[plan];
+  const params = new URLSearchParams({ enabled: LS_VARIANTS[plan] });
   // custom[uid] viaja en el checkout y vuelve en el webhook para saber a qué usuario activar premium
-  const params = new URLSearchParams();
   if (currentUser?.uid) params.set('checkout[custom][uid]', currentUser.uid);
   if (currentUser?.email) params.set('checkout[email]', currentUser.email);
-  const url = `https://makom.lemonsqueezy.com/checkout?cart=${variantId}&${params.toString()}`;
+  const url = `https://ckc.lemonsqueezy.com/checkout/buy/${LS_PRODUCT_UUID}?${params.toString()}`;
   window.location.href = url;
 };
 // Helper de prueba para alternar premium sin pagar (solo Fase 1)
