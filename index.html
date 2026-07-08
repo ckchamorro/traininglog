@@ -441,6 +441,12 @@
     background: transparent; border: none; color: var(--text-dim);
     font-family: var(--font); font-size: 0.85rem; font-weight: 600; cursor: pointer;
   }
+  .paywall-restore {
+    display: block; margin: 12px auto 0;
+    background: transparent; border: none; color: var(--text-faint);
+    font-family: var(--font); font-size: 0.75rem; font-weight: 600;
+    text-decoration: underline; cursor: pointer;
+  }
   .chart-container.locked canvas { filter: blur(7px); opacity: 0.4; }
   .chart-lock {
     position: absolute; inset: 0; display: flex; flex-direction: column;
@@ -716,6 +722,7 @@
     </div>
     <div class="paywall-trial">Sin suscripciones. Pagas una vez y es tuyo para siempre.</div>
     <button class="paywall-close" onclick="cerrarPaywall()">Ahora no</button>
+    <button class="paywall-restore" onclick="restaurarCompra()">¿Ya compraste? Restaurar compra</button>
   </div>
 </div>
 
@@ -799,6 +806,40 @@ window.iniciarCheckout = function() {
   const url = `https://ckc.lemonsqueezy.com/checkout/buy/${LS_PRODUCT_UUID}?${params.toString()}`;
   window.location.href = url;
 };
+// Re-chequear la compra en Firestore (botón del paywall y regreso del checkout)
+window.restaurarCompra = async function() {
+  if (!currentUser) return;
+  mostrarToast('Verificando tu compra…');
+  await cargarPremium();
+  actualizarUIPremium();
+  renderRegistro();
+  if (esPremium()) {
+    cerrarPaywall();
+    mostrarToast('⭐ Premium activo. ¡Gracias!');
+  } else {
+    mostrarToast('Aún no vemos tu compra. Espera un minuto e intenta de nuevo.');
+  }
+};
+
+// Al volver del checkout (redirect configurado en el producto de Lemon Squeezy
+// hacia https://app.ormakom.com/?compra=exitosa) el webhook puede tardar unos
+// segundos: reintenta hasta ~30s antes de rendirse.
+async function verificarCompraAlVolver() {
+  if (new URLSearchParams(location.search).get('compra') !== 'exitosa') return;
+  history.replaceState(null, '', location.pathname);
+  if (esPremium()) return;
+  mostrarToast('Verificando tu compra…');
+  for (let i = 0; i < 10 && !esPremium(); i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    await cargarPremium();
+  }
+  actualizarUIPremium();
+  renderRegistro();
+  mostrarToast(esPremium()
+    ? '⭐ Premium activado. ¡Gracias por tu compra!'
+    : 'Tu compra está en proceso. Recarga la app en un minuto.');
+}
+
 // Helper de prueba para alternar premium sin pagar (solo Fase 1)
 window.setPremiumTest = function(v) {
   localStorage.setItem('premiumTest', v ? '1' : '0');
@@ -1445,6 +1486,7 @@ async function initApp() {
   document.getElementById('modal-ej').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
   document.getElementById('share-modal').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarShare(); });
   document.getElementById('modal-nombre').addEventListener('keydown', e => { if (e.key === 'Enter') guardarEjercicio(); });
+  verificarCompraAlVolver();
 }
 </script>
 <script>
