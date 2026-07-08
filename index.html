@@ -800,8 +800,11 @@ const LS_VARIANTS = {
 window.iniciarCheckout = function(plan) {
   cerrarPaywall();
   const variantId = LS_VARIANTS[plan];
-  const uid = currentUser?.uid || '';
-  const url = `https://makom.lemonsqueezy.com/checkout?cart=${variantId}`;
+  // custom[uid] viaja en el checkout y vuelve en el webhook para saber a qué usuario activar premium
+  const params = new URLSearchParams();
+  if (currentUser?.uid) params.set('checkout[custom][uid]', currentUser.uid);
+  if (currentUser?.email) params.set('checkout[email]', currentUser.email);
+  const url = `https://makom.lemonsqueezy.com/checkout?cart=${variantId}&${params.toString()}`;
   window.location.href = url;
 };
 // Helper de prueba para alternar premium sin pagar (solo Fase 1)
@@ -818,11 +821,12 @@ async function leerFirestore() {
   const snap = await getDoc(ref);
   if (snap.exists()) return snap.data();
   const inicial = { historial: HISTORIAL_INICIAL, ejercicios: EJERCICIOS_DEFAULT };
-  await setDoc(ref, inicial);
+  await setDoc(ref, inicial, { merge: true });
   return inicial;
 }
 async function guardarFirestore(datos, ejercicios) {
-  await setDoc(doc(db, 'usuarios', currentUser.uid), { historial: datos, ejercicios });
+  // merge: true — el doc también guarda el flag premium (lo escribe el webhook de Lemon Squeezy)
+  await setDoc(doc(db, 'usuarios', currentUser.uid), { historial: datos, ejercicios }, { merge: true });
 }
 function setSyncBar(msg, tipo) {
   const bar = document.getElementById('sync-bar');

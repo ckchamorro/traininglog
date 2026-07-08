@@ -1,0 +1,13 @@
+{
+  "name": "traininglog-functions",
+  "description": "Webhook de Lemon Squeezy que activa/desactiva Premium en Firestore",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "private": true
+}
