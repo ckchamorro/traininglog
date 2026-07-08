@@ -9,10 +9,6 @@ admin.initializeApp();
 // Se configura con: firebase functions:secrets:set LS_WEBHOOK_SECRET
 const LS_WEBHOOK_SECRET = defineSecret('LS_WEBHOOK_SECRET');
 
-// Estados de suscripción que mantienen acceso Premium.
-// past_due incluido: Lemon Squeezy reintenta el cobro varios días antes de expirar.
-const ESTADOS_ACTIVOS = ['active', 'on_trial', 'past_due', 'cancelled'];
-
 exports.lsWebhook = onRequest({ secrets: [LS_WEBHOOK_SECRET], cors: false }, async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).send('Method not allowed');
@@ -45,21 +41,14 @@ exports.lsWebhook = onRequest({ secrets: [LS_WEBHOOK_SECRET], cors: false }, asy
     return;
   }
 
+  // Modelo de pago único: la compra activa Premium para siempre;
+  // solo un reembolso lo revierte.
   let premium;
   switch (evento) {
-    case 'subscription_created':
-    case 'subscription_updated':
-    case 'subscription_resumed':
-    case 'subscription_unpaused':
-    case 'subscription_payment_success':
-      premium = ESTADOS_ACTIVOS.includes(attrs.status);
+    case 'order_created':
+      premium = attrs.status === 'paid';
       break;
-    case 'subscription_cancelled':
-      // Cancelar no corta el acceso: sigue Premium hasta fin del período pagado.
-      // Lemon Squeezy enviará subscription_expired cuando realmente termine.
-      premium = true;
-      break;
-    case 'subscription_expired':
+    case 'order_refunded':
       premium = false;
       break;
     default:
@@ -70,12 +59,9 @@ exports.lsWebhook = onRequest({ secrets: [LS_WEBHOOK_SECRET], cors: false }, asy
   await admin.firestore().doc(`usuarios/${uid}`).set(
     {
       premium,
-      lsStatus: attrs.status || null,
-      lsSubscriptionId: String(req.body?.data?.id || ''),
+      lsOrderId: String(req.body?.data?.id || ''),
+      lsOrderStatus: attrs.status || null,
       lsCustomerId: String(attrs.customer_id || ''),
-      lsVariantId: String(attrs.variant_id || ''),
-      lsRenewsAt: attrs.renews_at || null,
-      lsEndsAt: attrs.ends_at || null,
       premiumUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
     { merge: true }
