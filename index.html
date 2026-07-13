@@ -243,11 +243,31 @@
     -webkit-user-select: none; user-select: none;
   }
   .step-btn:active { background: var(--border); color: var(--lime); }
-  .step-val {
-    flex: 1; text-align: center; font-size: 1.25rem; font-weight: 800;
-    color: var(--text-faint); letter-spacing: -0.5px; min-width: 0;
-    cursor: pointer; padding: 4px 0;
+  .wheel-wrap { flex: 1; min-width: 0; position: relative; }
+  .wheel-hint {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    width: 5px; height: 28px; border-radius: 3px; pointer-events: none;
+    background-color: rgba(255,255,255,0.07);
+    background-image: repeating-linear-gradient(to bottom, var(--text-faint) 0 1px, transparent 1px 4px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+    opacity: 0.9;
   }
+  .step-val {
+    width: 100%; text-align: center; height: 48px;
+    color: var(--text-faint); cursor: pointer;
+    overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain;
+    scrollbar-width: none; -webkit-user-select: none; user-select: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  }
+  .step-val::-webkit-scrollbar { display: none; }
+  .wheel-list { padding: 12px 0; }
+  .wheel-item {
+    height: 24px; line-height: 24px; scroll-snap-align: center;
+    font-size: 0.78rem; font-weight: 600; color: var(--text-faint);
+  }
+  .wheel-item.on { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; color: inherit; }
   .step-val.prev-loaded { color: #ffffff; }
   .step-val.has-value { color: var(--lime); }
   .step-label {
@@ -279,6 +299,19 @@
     resize: none; height: 72px; outline: none; transition: border-color 0.2s;
   }
   .notas-section textarea:focus { border-color: var(--border2); }
+  .contacto-section { margin-top: 26px; }
+  .contacto-sub {
+    font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .btn-contacto {
+    width: 100%; margin-top: 12px; padding: 13px;
+    background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px;
+    color: var(--text); font-family: var(--font); font-size: 0.92rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-contacto:active { border-color: var(--lime); color: var(--lime); }
+  .btn-contacto:disabled { opacity: 0.5; }
   .notas-section textarea::placeholder { color: var(--text-faint); }
 
   /* ══ BTN GUARDAR ══ */
@@ -703,6 +736,14 @@
       <div class="section-label">Mis ejercicios</div>
       <div id="ej-manage-list"></div>
       <button class="btn-add-ej" id="btn-add-ej">＋ Agregar ejercicio</button>
+
+      <div class="notas-section contacto-section">
+        <label>Contacto</label>
+        <p class="contacto-sub">¿Encontraste un problema o tienes una idea para mejorar la app? Escríbeme y te leo.</p>
+        <textarea id="contacto-msg" maxlength="1000" placeholder="Escribe tu mensaje..."></textarea>
+        <button class="btn-contacto" onclick="enviarContacto()">📨 Enviar mensaje</button>
+      </div>
+
       <div class="app-version" id="app-version"></div>
     </div>
 
@@ -909,6 +950,30 @@ async function verificarCompraAlVolver() {
     : 'Tu compra está en proceso. Recarga la app en un minuto.');
 }
 
+// Formulario de contacto: guarda el mensaje en la colección "mensajes" de
+// Firestore (solo la dueña puede leerla desde la consola de Firebase).
+window.enviarContacto = async function() {
+  const msg = document.getElementById('contacto-msg').value.trim();
+  if (!msg) { mostrarToast('Escribe un mensaje primero'); return; }
+  if (!currentUser) { mostrarToast('Inicia sesión para enviar tu mensaje'); return; }
+  const btn = document.querySelector('.btn-contacto');
+  btn.disabled = true;
+  try {
+    await setDoc(doc(db, 'mensajes', `${currentUser.uid}_${Date.now()}`), {
+      uid: currentUser.uid,
+      email: currentUser.email || '',
+      mensaje: msg.slice(0, 1000),
+      version: APP_VERSION,
+      fecha: new Date().toISOString(),
+    });
+    document.getElementById('contacto-msg').value = '';
+    mostrarToast('✓ Mensaje enviado. ¡Gracias!');
+  } catch(e) {
+    mostrarToast('No se pudo enviar. Revisa tu conexión e intenta de nuevo.');
+  }
+  btn.disabled = false;
+};
+
 // Helper de prueba para alternar premium sin pagar (solo Fase 1)
 window.setPremiumTest = function(v) {
   localStorage.setItem('premiumTest', v ? '1' : '0');
@@ -1012,10 +1077,15 @@ function setVal(ejId, s, tipo, v, active = true) {
   if (active) el.dataset.active = '1';
   const display = document.getElementById(`${ejId}_s${s}_${tipo}_display`);
   if (display) {
-    display.textContent = v <= 0 ? '—' : v;
     if (v <= 0) display.className = 'step-val';
     else if (active) display.className = 'step-val has-value';
     else display.className = 'step-val prev-loaded';
+    const idx = wheelIndex(display, v <= 0 ? 0 : v);
+    display.querySelectorAll('.wheel-item.on').forEach(it => it.classList.remove('on'));
+    display.querySelectorAll('.wheel-item')[idx].classList.add('on');
+    display.scrollTop = idx * WHEEL_ITEM_H;
+    const hint = display.parentElement.querySelector('.wheel-hint');
+    if (hint) hint.style.backgroundPositionY = -display.scrollTop + 'px';
   }
 }
 window.stepUp = function(ejId, s, tipo) {
@@ -1035,6 +1105,73 @@ window.editVal = function(ejId, s, tipo) {
   setVal(ejId, s, tipo, num, true);
 };
 
+// Rueda de valores: se desliza con el dedo (scroll nativo con inercia) y se
+// imanta al valor más cercano. Tocar el valor central abre la edición directa;
+// tocar un valor vecino lo selecciona.
+const WHEEL_ITEM_H = 24;
+
+function wheelItemsHTML(tipo) {
+  const paso = tipo === 'peso' ? 0.5 : 1;
+  const max = tipo === 'peso' ? 150 : 60;
+  let html = '<div class="wheel-item" data-v="0">—</div>';
+  for (let v = paso; v <= max; v += paso) html += `<div class="wheel-item" data-v="${v}">${v}</div>`;
+  return html;
+}
+
+// Índice del valor dentro de la rueda; si no existe (valor tecleado fuera de
+// la escala) se inserta en orden para poder mostrarlo.
+function wheelIndex(cont, v) {
+  const items = [...cont.querySelectorAll('.wheel-item')];
+  let idx = items.findIndex(it => parseFloat(it.dataset.v) === v);
+  if (idx === -1) {
+    const item = document.createElement('div');
+    item.className = 'wheel-item'; item.dataset.v = v; item.textContent = v;
+    const sig = items.find(it => parseFloat(it.dataset.v) > v);
+    cont.querySelector('.wheel-list').insertBefore(item, sig || null);
+    idx = [...cont.querySelectorAll('.wheel-item')].indexOf(item);
+  }
+  return idx;
+}
+
+// Cuando la rueda deja de moverse (y el dedo ya no está apoyado),
+// tomar el valor que quedó al centro
+function wheelSettle(cont) {
+  if (cont._touching) return;
+  const items = cont.querySelectorAll('.wheel-item');
+  const idx = Math.max(0, Math.min(items.length - 1, Math.round(cont.scrollTop / WHEEL_ITEM_H)));
+  const v = parseFloat(items[idx].dataset.v);
+  const { ej, s, tipo } = cont.dataset;
+  if (v !== getVal(ej, s, tipo)) setVal(ej, s, tipo, v, true);
+}
+function wheelDebounce(cont) {
+  clearTimeout(cont._wheelTimer);
+  cont._wheelTimer = setTimeout(() => wheelSettle(cont), 140);
+}
+document.addEventListener('scroll', (e) => {
+  const cont = e.target;
+  if (!(cont instanceof Element) || !cont.classList || !cont.classList.contains('step-val')) return;
+  // La ruedita lateral gira acompañando el movimiento
+  const hint = cont.parentElement.querySelector('.wheel-hint');
+  if (hint) hint.style.backgroundPositionY = -cont.scrollTop + 'px';
+  wheelDebounce(cont);
+}, true);
+document.addEventListener('touchstart', (e) => {
+  const cont = e.target.closest ? e.target.closest('.step-val') : null;
+  if (cont) cont._touching = true;
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  document.querySelectorAll('.step-val').forEach(c => {
+    if (c._touching) { c._touching = false; wheelDebounce(c); }
+  });
+}, { passive: true });
+
+window.wheelTap = function(e, ejId, s, tipo) {
+  const item = e.target.closest('.wheel-item');
+  const v = item ? parseFloat(item.dataset.v) : null;
+  if (item && v !== getVal(ejId, s, tipo)) setVal(ejId, s, tipo, v, true);
+  else editVal(ejId, s, tipo);
+};
+
 function ultimaSesion(ejId) {
   const hoy = fechaHoy();
   const registros = cargarDatos()
@@ -1052,7 +1189,12 @@ function serieRowHTML(ejId, s) {
             <div class="stepper-wrap">
               <div class="stepper">
                 <button class="step-btn" onclick="stepDown('${ejId}',${s},'reps')">−</button>
-                <div class="step-val" id="${ejId}_s${s}_reps_display" onclick="editVal('${ejId}',${s},'reps')">—</div>
+                <div class="wheel-wrap">
+                  <div class="step-val" id="${ejId}_s${s}_reps_display" data-ej="${ejId}" data-s="${s}" data-tipo="reps" onclick="wheelTap(event,'${ejId}',${s},'reps')">
+                    <div class="wheel-list">${wheelItemsHTML('reps')}</div>
+                  </div>
+                  <span class="wheel-hint"></span>
+                </div>
                 <button class="step-btn" onclick="stepUp('${ejId}',${s},'reps')">+</button>
               </div>
               <span class="step-label">Reps</span>
@@ -1061,7 +1203,12 @@ function serieRowHTML(ejId, s) {
             <div class="stepper-wrap">
               <div class="stepper">
                 <button class="step-btn" onclick="stepDown('${ejId}',${s},'peso')">−</button>
-                <div class="step-val" id="${ejId}_s${s}_peso_display" onclick="editVal('${ejId}',${s},'peso')">—</div>
+                <div class="wheel-wrap">
+                  <div class="step-val" id="${ejId}_s${s}_peso_display" data-ej="${ejId}" data-s="${s}" data-tipo="peso" onclick="wheelTap(event,'${ejId}',${s},'peso')">
+                    <div class="wheel-list">${wheelItemsHTML('peso')}</div>
+                  </div>
+                  <span class="wheel-hint"></span>
+                </div>
                 <button class="step-btn" onclick="stepUp('${ejId}',${s},'peso')">+</button>
               </div>
               <span class="step-label">Kg</span>
@@ -1618,7 +1765,7 @@ async function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v14';
+  const APP_VERSION = 'v15';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
