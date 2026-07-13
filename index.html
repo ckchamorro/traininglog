@@ -356,6 +356,14 @@
     opacity: 0.7; padding: 2px;
   }
   .btn-inbox-del:active { opacity: 1; }
+  .inbox-actions { margin-top: 10px; }
+  .btn-inbox-reply {
+    display: inline-block; background: var(--lime-dim);
+    border: 1px solid rgba(200,241,53,0.3); border-radius: 9px;
+    color: var(--lime); font-size: 0.78rem; font-weight: 700;
+    padding: 6px 14px; text-decoration: none; cursor: pointer;
+  }
+  .btn-inbox-reply:active { background: rgba(200,241,53,0.2); }
   .notas-section textarea::placeholder { color: var(--text-faint); }
 
   /* ══ BTN GUARDAR ══ */
@@ -1577,10 +1585,21 @@ window.renderInbox = async function() {
       // textContent para no interpretar como HTML lo que escribió el usuario
       card.innerHTML = `<div class="inbox-msg"></div>
         <div class="inbox-meta"><span class="inbox-email"></span><span class="inbox-fecha"></span></div>
+        <div class="inbox-actions"><a class="btn-inbox-reply">✉︎ Responder</a></div>
         <button class="btn-inbox-del" title="Eliminar mensaje">🗑</button>`;
       card.querySelector('.inbox-msg').textContent = m.mensaje || '';
       card.querySelector('.inbox-email').textContent = m.email || 'sin correo';
       card.querySelector('.inbox-fecha').textContent = fecha;
+      const btnReply = card.querySelector('.btn-inbox-reply');
+      if (m.email) {
+        // Correo crudo en la ruta (viene verificado de Google) para que las apps
+        // de correo del teléfono lo interpreten bien; solo se codifican asunto y cuerpo.
+        const asunto = encodeURIComponent('Re: tu mensaje en Training Log');
+        const cuerpo = encodeURIComponent('\n\n——\nRespondiendo a tu mensaje:\n' + (m.mensaje || ''));
+        btnReply.href = `mailto:${m.email}?subject=${asunto}&body=${cuerpo}`;
+      } else {
+        btnReply.remove();   // sin correo del remitente no se puede responder
+      }
       card.querySelector('.btn-inbox-del').addEventListener('click', () => borrarMensaje(d.id));
       list.appendChild(card);
     });
@@ -1944,7 +1963,7 @@ async function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v17';
+  const APP_VERSION = 'v18';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
