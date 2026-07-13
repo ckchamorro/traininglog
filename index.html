@@ -329,6 +329,33 @@
   }
   .btn-contacto:active { border-color: var(--lime); color: var(--lime); }
   .btn-contacto:disabled { opacity: 0.5; }
+
+  /* Bandeja de mensajes (solo dueña) */
+  .inbox-section { margin-bottom: 26px; }
+  .inbox-head { display: flex; align-items: center; justify-content: space-between; }
+  .inbox-count { color: var(--lime); font-weight: 800; }
+  .btn-inbox-refresh {
+    background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px;
+    color: var(--text-dim); width: 34px; height: 30px; font-size: 1rem; cursor: pointer;
+    font-family: var(--font); transition: all 0.15s;
+  }
+  .btn-inbox-refresh:active { border-color: var(--lime); color: var(--lime); }
+  .inbox-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .inbox-empty { color: var(--text-dim); font-size: 0.88rem; padding: 6px 2px; }
+  .inbox-card {
+    position: relative; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 13px 40px 11px 15px;
+  }
+  .inbox-msg { color: var(--text); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .inbox-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 0.72rem; }
+  .inbox-email { color: var(--lime); font-weight: 600; }
+  .inbox-fecha { color: var(--text-faint); }
+  .btn-inbox-del {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; cursor: pointer; font-size: 0.95rem;
+    opacity: 0.7; padding: 2px;
+  }
+  .btn-inbox-del:active { opacity: 1; }
   .notas-section textarea::placeholder { color: var(--text-faint); }
 
   /* ══ BTN GUARDAR ══ */
@@ -751,6 +778,16 @@
 
     <!-- EJERCICIOS -->
     <div class="panel" id="panel-ejercicios">
+
+      <!-- Bandeja de mensajes (solo visible para la dueña) -->
+      <div class="inbox-section" id="owner-inbox" style="display:none">
+        <div class="inbox-head">
+          <span class="section-label">Mensajes recibidos <span class="inbox-count" id="inbox-count"></span></span>
+          <button class="btn-inbox-refresh" onclick="renderInbox()" title="Actualizar">↻</button>
+        </div>
+        <div class="inbox-list" id="inbox-list"></div>
+      </div>
+
       <div class="section-label">Mis ejercicios</div>
       <div id="ej-manage-list"></div>
       <button class="btn-add-ej" id="btn-add-ej">＋ Agregar ejercicio</button>
@@ -859,7 +896,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc }
+import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, getDocs, deleteDoc }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -968,6 +1005,10 @@ async function verificarCompraAlVolver() {
     ? '⭐ Premium activado. ¡Gracias por tu compra!'
     : 'Tu compra está en proceso. Recarga la app en un minuto.');
 }
+
+// La dueña de la app: solo su cuenta ve la bandeja de mensajes.
+const OWNER_EMAIL = 'ckarem@gmail.com';
+function esOwner() { return currentUser?.email === OWNER_EMAIL; }
 
 // Formulario de contacto: guarda el mensaje en la colección "mensajes" de
 // Firestore (solo la dueña puede leerla desde la consola de Firebase).
@@ -1510,7 +1551,54 @@ function renderEjManage() {
   });
   el.querySelectorAll('.btn-ej-edit').forEach(b => b.addEventListener('click', () => abrirModalEditar(+b.dataset.idx)));
   el.querySelectorAll('.btn-ej-del').forEach(b => b.addEventListener('click', () => eliminarEjercicio(+b.dataset.idx)));
+  renderInbox();
 }
+
+// Bandeja de mensajes: solo la dueña la ve. Lista los mensajes más recientes
+// primero, con opción de eliminarlos.
+window.renderInbox = async function() {
+  const box = document.getElementById('owner-inbox');
+  if (!box) return;
+  if (!esOwner()) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const list = document.getElementById('inbox-list');
+  const contador = document.getElementById('inbox-count');
+  list.innerHTML = '<div class="inbox-empty">Cargando…</div>';
+  try {
+    const snap = await getDocs(query(collection(db, 'mensajes'), orderBy('fecha', 'desc')));
+    contador.textContent = snap.size ? `(${snap.size})` : '';
+    if (snap.empty) { list.innerHTML = '<div class="inbox-empty">Aún no hay mensajes.</div>'; return; }
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const m = d.data();
+      const fecha = m.fecha ? new Date(m.fecha).toLocaleString('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      const card = document.createElement('div');
+      card.className = 'inbox-card';
+      // textContent para no interpretar como HTML lo que escribió el usuario
+      card.innerHTML = `<div class="inbox-msg"></div>
+        <div class="inbox-meta"><span class="inbox-email"></span><span class="inbox-fecha"></span></div>
+        <button class="btn-inbox-del" title="Eliminar mensaje">🗑</button>`;
+      card.querySelector('.inbox-msg').textContent = m.mensaje || '';
+      card.querySelector('.inbox-email').textContent = m.email || 'sin correo';
+      card.querySelector('.inbox-fecha').textContent = fecha;
+      card.querySelector('.btn-inbox-del').addEventListener('click', () => borrarMensaje(d.id));
+      list.appendChild(card);
+    });
+  } catch (e) {
+    list.innerHTML = '<div class="inbox-empty">No se pudieron cargar los mensajes.</div>';
+  }
+};
+
+window.borrarMensaje = async function(id) {
+  if (!confirm('¿Eliminar este mensaje?')) return;
+  try {
+    await deleteDoc(doc(db, 'mensajes', id));
+    mostrarToast('Mensaje eliminado');
+    renderInbox();
+  } catch (e) {
+    mostrarToast('No se pudo eliminar');
+  }
+};
 
 window.abrirModalAgregar = function() {
   if (!esPremium() && cargarEjercicios().length >= LIMITE_EJ_GRATIS) { abrirPaywall('ejercicios'); return; }
@@ -1856,7 +1944,7 @@ async function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v16';
+  const APP_VERSION = 'v17';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;

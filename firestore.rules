@@ -17,7 +17,10 @@ service cloud.firestore {
                     && request.resource.data.mensaje is string
                     && request.resource.data.mensaje.size() > 0
                     && request.resource.data.mensaje.size() <= 1000;
-      allow read, update, delete: if false;
+      // Solo la dueña (por su correo) puede leer y borrar los mensajes.
+      allow read, delete: if request.auth != null
+                          && request.auth.token.email == 'ckarem@gmail.com';
+      allow update: if false;
     }
 
     // Todo lo demás queda cerrado por defecto.
