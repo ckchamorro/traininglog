@@ -27,8 +27,8 @@
     --border:   rgba(255,255,255,0.07);
     --border2:  rgba(255,255,255,0.12);
     --text:     #ffffff;
-    --text-dim: rgba(255,255,255,0.45);
-    --text-faint: rgba(255,255,255,0.2);
+    --text-dim: rgba(255,255,255,0.78);
+    --text-faint: rgba(255,255,255,0.55);
     --lime:     #c8f135;
     --lime-dim: rgba(200,241,53,0.12);
     --lime-glow:rgba(200,241,53,0.25);
@@ -1275,8 +1275,8 @@ function actualizarGraficos() {
         tooltip: { backgroundColor: '#1a1a1a', titleColor: '#fff', bodyColor: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }
       },
       scales: {
-        x: { ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+        x: { ticks: { color: 'rgba(255,255,255,0.65)', font: { family: 'DM Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: 'rgba(255,255,255,0.65)', font: { family: 'DM Sans', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
       }
     }
   };
@@ -1371,6 +1371,38 @@ window.showPanel = function(nombre, btnEl) {
   if (nombre === 'ejercicios') renderEjManage();
 };
 
+// Navegación entre paneles deslizando con dos dedos sobre la pantalla
+const PANEL_ORDER = ['registro', 'historial', 'progreso', 'ejercicios'];
+let swipeDosDedos = null;
+
+document.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 2) { swipeDosDedos = null; return; }
+  swipeDosDedos = {
+    x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+    y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+    usado: false,
+  };
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if (!swipeDosDedos || swipeDosDedos.usado || e.touches.length !== 2) return;
+  const dx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - swipeDosDedos.x;
+  const dy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - swipeDosDedos.y;
+  // Solo cuenta como swipe si el gesto es claramente horizontal
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  swipeDosDedos.usado = true;
+  if (getComputedStyle(document.getElementById('app-screen')).display === 'none') return;
+  const activo = document.querySelector('.panel.active');
+  const idx = PANEL_ORDER.findIndex(n => activo && activo.id === 'panel-' + n);
+  const destino = idx + (dx < 0 ? 1 : -1);
+  if (idx === -1 || destino < 0 || destino >= PANEL_ORDER.length) return;
+  showPanel(PANEL_ORDER[destino], document.querySelectorAll('.nav-btn')[destino]);
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) swipeDosDedos = null;
+}, { passive: true });
+
 
 function mostrarToast(msg) {
   const t = document.getElementById('toast');
@@ -1418,7 +1450,7 @@ function mostrarShare(sesionHoy) {
 
   // Top label: TRAINING LOG
   ctx.font = '700 52px DM Sans, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
   ctx.textAlign = 'left';
   ctx.fillText('TRAINING LOG', 90, 140);
 
@@ -1427,7 +1459,7 @@ function mostrarShare(sesionHoy) {
   const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const dateStr = `${hoy.getDate()} ${meses[hoy.getMonth()].toUpperCase()} ${hoy.getFullYear()}`;
   ctx.font = '500 46px DM Sans, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
   ctx.fillText(dateStr, 90, 210);
 
   // Big checkmark
@@ -1510,7 +1542,7 @@ function mostrarShare(sesionHoy) {
   ctx.textAlign = 'center';
   ctx.fillText('TRAINING LOG', W / 2, H - 120);
   ctx.font = '500 38px DM Sans, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
   ctx.fillText('app.ormakom.com', W / 2, H - 72);
 
   // Marca de agua diagonal en plan gratis
