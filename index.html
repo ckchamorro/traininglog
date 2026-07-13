@@ -111,7 +111,7 @@
 
   /* ══ APP ══ */
   #app-screen { display: none; padding-bottom: 80px; }
-  .app { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+  .app { max-width: 600px; margin: 0 auto; padding: 0 16px; overflow-x: clip; }
 
   /* ══ HEADER ══ */
   .header {
@@ -177,8 +177,14 @@
   .sync-bar.error { color: var(--red); }
 
   /* ══ PANELS ══ */
+  .panels { position: relative; }
   .panel { display: none; }
   .panel.active { display: block; }
+  /* Durante la transición el panel que sale queda superpuesto sobre el que entra */
+  .panel.saliente {
+    position: absolute; top: 0; left: 0; right: 0;
+    pointer-events: none;
+  }
 
   /* ══ SECTION LABEL ══ */
   .section-label {
@@ -225,9 +231,20 @@
     gap: 8px; align-items: center;
   }
   .serie-num {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
     font-size: 0.72rem; font-weight: 700; color: var(--text-faint);
     text-align: center; text-transform: uppercase; letter-spacing: 0.5px;
   }
+  .btn-del-serie {
+    width: 22px; height: 22px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text-faint); font-size: 0.7rem; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font); transition: all 0.15s;
+  }
+  .btn-del-serie:active { border-color: var(--red); color: var(--red); }
+  /* La primera serie no se puede eliminar */
+  .serie-row:first-child .btn-del-serie { display: none; }
 
   /* Stepper */
   .stepper {
@@ -700,6 +717,7 @@
 
     <div class="sync-bar" id="sync-bar"></div>
 
+    <div class="panels">
     <!-- REGISTRO -->
     <div class="panel active" id="panel-registro">
       <div class="section-label">Sesión de hoy</div>
@@ -746,6 +764,7 @@
 
       <div class="app-version" id="app-version"></div>
     </div>
+    </div><!-- /.panels -->
 
   </div>
 
@@ -1185,7 +1204,10 @@ const MAX_SERIES = 6;
 function serieRowHTML(ejId, s) {
   return `
           <div class="serie-row">
-            <div class="serie-num">S${s}</div>
+            <div class="serie-num">
+              <span>S${s}</span>
+              <button class="btn-del-serie" onclick="eliminarSerie('${ejId}',this)" title="Eliminar serie" aria-label="Eliminar serie">✕</button>
+            </div>
             <div class="stepper-wrap">
               <div class="stepper">
                 <button class="step-btn" onclick="stepDown('${ejId}',${s},'reps')">−</button>
@@ -1231,6 +1253,32 @@ window.agregarSerie = function(ejId) {
     const btn = document.getElementById(`${ejId}_addserie`);
     if (btn) btn.style.display = 'none';
   }
+};
+
+// Elimina la serie de esa fila y renumera las restantes (S1, S2, …),
+// conservando los valores ya ingresados en las demás.
+window.eliminarSerie = function(ejId, btn) {
+  const list = document.getElementById(`${ejId}_series`);
+  const row = btn.closest('.serie-row');
+  if (!list || !row) return;
+  const filas = [...list.querySelectorAll('.serie-row')];
+  if (filas.length <= 1) return;               // siempre queda al menos una serie
+  const idx = filas.indexOf(row);
+  if (idx === 0) return;                        // la primera no se elimina
+  // Guardar los valores actuales antes de reconstruir
+  const vals = filas.map((_, i) => ({
+    reps: getVal(ejId, i + 1, 'reps'), repsAct: isActive(ejId, i + 1, 'reps'),
+    peso: getVal(ejId, i + 1, 'peso'), pesoAct: isActive(ejId, i + 1, 'peso'),
+  }));
+  vals.splice(idx, 1);
+  list.innerHTML = '';
+  vals.forEach((v, i) => {
+    list.insertAdjacentHTML('beforeend', serieRowHTML(ejId, i + 1));
+    if (v.reps > 0) setVal(ejId, i + 1, 'reps', v.reps, v.repsAct);
+    if (v.peso > 0) setVal(ejId, i + 1, 'peso', v.peso, v.pesoAct);
+  });
+  const addBtn = document.getElementById(`${ejId}_addserie`);
+  if (addBtn) addBtn.style.display = '';        // vuelve a habilitar "Agregar serie"
 };
 
 function renderRegistro() {
@@ -1508,18 +1556,61 @@ async function eliminarEjercicio(idx) {
   renderEjManage(); mostrarToast('Eliminado');
 }
 
+const PANEL_ORDER = ['registro', 'historial', 'progreso', 'ejercicios'];
+const prefiereMenosMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const TRANSICION_MS = 800;
+const TRANSICION_EASING = 'cubic-bezier(0.45, 0, 0.55, 1)'; // ease-in-out parejo
+
 window.showPanel = function(nombre, btnEl) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  // Normalizar cualquier transición aún en curso antes de empezar otra
+  document.querySelectorAll('.panel').forEach(p => p.getAnimations().forEach(a => a.finish()));
+  document.querySelectorAll('.panel.saliente').forEach(p => p.classList.remove('active', 'saliente'));
+
+  const previo = document.querySelector('.panel.active');
+  const destino = document.getElementById('panel-' + nombre);
+  if (destino === previo) return;
+  const iPrev = previo ? PANEL_ORDER.indexOf(previo.id.replace('panel-', '')) : -1;
+  const iNext = PANEL_ORDER.indexOf(nombre);
+
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + nombre).classList.add('active');
   btnEl.classList.add('active');
+  destino.classList.add('active');
   if (nombre === 'historial') renderHistorial();
   if (nombre === 'progreso') renderProgreso();
   if (nombre === 'ejercicios') renderEjManage();
+
+  const animar = !prefiereMenosMovimiento && previo && iPrev !== -1 && iNext !== -1
+                 && typeof destino.animate === 'function';
+  if (!animar) {
+    if (previo) previo.classList.remove('active');
+    return;
+  }
+
+  const dir = iNext > iPrev ? 1 : -1;   // 1 = avanzas (derecha), -1 = retrocedes
+  const dist = 60;
+  const opts = { duration: TRANSICION_MS, easing: TRANSICION_EASING };
+
+  // El panel entrante llega desde el lado y aparece; define el alto (flujo normal).
+  destino.animate(
+    [{ transform: `translateX(${dir * dist}px)`, opacity: 0 },
+     { transform: 'translateX(0)', opacity: 1 }],
+    opts
+  );
+
+  // El panel saliente se superpone (absoluto) y sale hacia el lado contrario a la vez.
+  previo.classList.add('saliente');
+  const outAnim = previo.animate(
+    [{ transform: 'translateX(0)', opacity: 1 },
+     { transform: `translateX(${-dir * dist}px)`, opacity: 0 }],
+    opts
+  );
+  const limpiar = () => previo.classList.remove('active', 'saliente');
+  outAnim.onfinish = limpiar;
+  outAnim.oncancel = limpiar;
 };
 
 // Navegación entre paneles deslizando con dos dedos sobre la pantalla
-const PANEL_ORDER = ['registro', 'historial', 'progreso', 'ejercicios'];
 let swipeDosDedos = null;
 
 document.addEventListener('touchstart', (e) => {
@@ -1765,7 +1856,7 @@ async function initApp() {
 }
 </script>
 <script>
-  const APP_VERSION = 'v15';
+  const APP_VERSION = 'v16';
   (function () {
     const verEl = document.getElementById('app-version');
     if (verEl) verEl.textContent = 'Training Log · ' + APP_VERSION;
