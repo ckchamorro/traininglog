@@ -6,12 +6,12 @@
   </defs>
   <g clip-path="url(#squircle)">
     <rect width="512" height="512" fill="#0a0a0a"/>
-    <!-- media luna: brillo lima tenue recortado por la esquina -->
-    <ellipse cx="414" cy="148" rx="207" ry="236" fill="#c8f135" opacity="0.34"/>
+    <!-- media luna: brillo lima recortado por la esquina -->
+    <ellipse cx="414" cy="148" rx="207" ry="236" fill="#c8f135" opacity="0.48"/>
   </g>
-  <!-- letra T (tipografía Arial Black) -->
-  <text x="256" y="340" font-family="Arial Black, sans-serif" font-weight="900"
-    font-size="280" fill="#c8f135" text-anchor="middle">T</text>
-  <!-- punto de acento -->
-  <circle cx="370" cy="175" r="28" fill="#c8f135" opacity="0.9"/>
+  <!-- T delgada con extremos redondeados -->
+  <rect x="168" y="168" width="184" height="32" rx="16" fill="#c8f135"/>
+  <rect x="243" y="168" width="34" height="224" rx="16" fill="#c8f135"/>
+  <!-- punto de acento (posición alta original) -->
+  <circle cx="372" cy="97" r="30" fill="#c8f135" opacity="0.9"/>
 </svg>
