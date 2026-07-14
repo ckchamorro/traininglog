@@ -6,12 +6,12 @@
   </defs>
   <g clip-path="url(#squircle)">
     <rect width="512" height="512" fill="#0a0a0a"/>
-    <!-- media luna: brillo lima recortado por la esquina -->
-    <ellipse cx="414" cy="148" rx="207" ry="236" fill="#c8f135" opacity="0.4"/>
+    <!-- media luna: brillo lima muy sutil recortado por la esquina -->
+    <ellipse cx="414" cy="148" rx="207" ry="236" fill="#c8f135" opacity="0.24"/>
   </g>
-  <!-- T delgada (más chica) con extremos redondeados -->
-  <rect x="186" y="190" width="140" height="28" rx="14" fill="#c8f135"/>
-  <rect x="242" y="190" width="28" height="176" rx="14" fill="#c8f135"/>
+  <!-- T delgada (tamaño original) con extremos redondeados -->
+  <rect x="168" y="168" width="184" height="32" rx="16" fill="#c8f135"/>
+  <rect x="243" y="168" width="34" height="224" rx="16" fill="#c8f135"/>
   <!-- punto de acento en la posición del original -->
   <circle cx="372" cy="97" r="30" fill="#c8f135" opacity="0.9"/>
 </svg>
